@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Temporada Seca · El juego de la gerente</title>
+<style>
+:root{
+  --navy:#1E2761; --navy2:#2E3D8F; --ice:#CADCFC; --gold:#E0A93E; --goldd:#8C6212;
+  --tint:#FBF3E1; --card:#F4F6FC; --ink:#2B2F3A; --gray:#5A6072;
+  --brick:#B5483F; --steel:#50808E; --line:#E3E7F2;
+  --serif:Georgia,'Cambria',serif;
+  --sans:-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:#EEF0F8;color:var(--ink);line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.app{max-width:440px;margin:0 auto;min-height:100dvh;background:#fff;display:flex;flex-direction:column}
+
+/* ---- score header ---- */
+.scoreboard{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;padding:.6rem .8rem .55rem;box-shadow:0 2px 10px rgba(20,26,64,.35)}
+.sb-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.45rem}
+.sb-top .t{font-family:var(--serif);font-weight:bold;font-size:.95rem}
+.sb-top .t em{color:var(--gold);font-style:normal}
+.sb-top .stage{font-size:.68rem;color:var(--ice);letter-spacing:.12em;text-transform:uppercase}
+.dims{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.35rem .6rem}
+.dim{font-size:.62rem;color:var(--ice)}
+.dim .bar{height:5px;background:rgba(202,220,252,.25);border-radius:99px;overflow:hidden;margin-top:2px}
+.dim .fill{height:100%;border-radius:99px;background:var(--gold);transition:width .6s ease,background .6s}
+.dim .fill.low{background:var(--brick)}
+.dim .fill.high{background:#8FB98F}
+.dim .lab{display:flex;justify-content:space-between}
+.dots{display:flex;gap:.35rem;justify-content:center;margin-top:.55rem}
+.dot{width:7px;height:7px;border-radius:50%;background:rgba(202,220,252,.35)}
+.dot.on{background:var(--gold)}
+
+/* ---- screens ---- */
+.screen{padding:1.15rem 1.1rem 2rem;display:none;flex:1}
+.screen.active{display:block;animation:up .35s ease}
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.eyebrow{font-size:.66rem;font-weight:700;letter-spacing:.2em;color:var(--goldd);text-transform:uppercase;margin-bottom:.45rem}
+h1,h2{font-family:var(--serif);color:var(--navy);line-height:1.2}
+h1{font-size:1.75rem;margin-bottom:.7rem}
+h2{font-size:1.3rem;margin-bottom:.55rem}
+p.ctx{font-size:.92rem;color:var(--ink);margin-bottom:.9rem}
+.notice{background:var(--tint);border-radius:11px;padding:.6rem .8rem;font-size:.8rem;margin-bottom:.6rem;color:var(--goldd)}
+.notice.bad{background:#F9EDEC;color:var(--brick)}
+.qcard{background:var(--card);border-radius:14px;padding:1rem;margin-top:.4rem}
+.qcard .q{font-weight:700;font-size:.98rem;color:var(--navy);margin-bottom:.75rem}
+.opt{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:.75rem .85rem;margin-bottom:.6rem;transition:border-color .15s,transform .15s}
+.opt:active{transform:scale(.985)}
+.opt:hover{border-color:var(--gold)}
+.opt b{display:block;font-size:.9rem;color:var(--ink)}
+.opt small{display:block;font-size:.74rem;color:var(--gray);font-style:italic;margin-top:.15rem}
+.btn{display:block;width:100%;background:var(--navy);color:#fff;border:none;border-radius:12px;padding:.85rem;font-size:.95rem;font-weight:700;margin-top:1rem}
+.btn:hover{background:var(--navy2)}
+.btn.gold{background:var(--gold);color:var(--navy)}
+.btn.ghost{background:#fff;color:var(--navy);border:1.5px solid var(--line)}
+
+/* ---- feedback ---- */
+.fb-tag{font-size:.64rem;font-weight:700;letter-spacing:.2em;color:var(--goldd)}
+.fb-box{background:var(--tint);border-radius:13px;padding:.9rem 1rem;margin:.6rem 0 .9rem;font-size:.9rem}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:.4rem}
+.chipd{font-size:.72rem;font-weight:700;border-radius:99px;padding:.25rem .65rem}
+.chipd.pos{background:#EEF4F6;color:var(--steel)}
+.chipd.neg{background:#F9EDEC;color:var(--brick)}
+.chosen{font-size:.8rem;color:var(--gray);margin-bottom:.5rem}
+.chosen b{color:var(--ink)}
+
+/* ---- intro / ending ---- */
+.hero{background:var(--navy);color:#fff;border-radius:0 0 22px 22px;padding:1.6rem 1.1rem 1.4rem;margin:-1.15rem -1.1rem 1.1rem}
+.hero .eyebrow{color:var(--gold)}
+.hero h1{color:#fff}
+.hero p{color:var(--ice);font-size:.9rem}
+.dimlist{margin:.9rem 0}
+.dimlist div{display:flex;gap:.55rem;font-size:.85rem;margin-bottom:.45rem;align-items:flex-start}
+.dimlist span.ic{flex:none;width:1.5rem;height:1.5rem;border-radius:7px;background:var(--card);display:grid;place-items:center;font-size:.8rem}
+.score-final{background:var(--card);border-radius:14px;padding:1rem;margin:.9rem 0}
+.sf-row{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;font-size:.78rem}
+.sf-row .nm{width:88px;flex:none;color:var(--gray)}
+.sf-row .bar{flex:1;height:9px;background:#E6E9F4;border-radius:99px;overflow:hidden}
+.sf-row .fill{height:100%;border-radius:99px}
+.sf-row .val{width:30px;text-align:right;font-weight:700;color:var(--navy)}
+.ending{border-radius:14px;padding:1rem 1.05rem;margin:.7rem 0;font-size:.9rem}
+.ending h2{margin-bottom:.35rem}
+.ending.win{background:var(--tint)}
+.ending.mid{background:var(--card)}
+.ending.bad{background:#F9EDEC}
+.kpi-next{font-family:var(--serif);font-size:1.9rem;color:var(--navy);font-weight:bold}
+.loglist{font-size:.8rem;color:var(--gray);margin:.6rem 0 1rem}
+.loglist li{margin-bottom:.35rem;margin-left:1rem}
+.loglist b{color:var(--ink)}
+.lessons div{background:#fff;border:1px solid var(--line);border-radius:11px;padding:.6rem .8rem;font-size:.82rem;margin-bottom:.5rem}
+.lessons .ok{border-left:none;background:var(--tint)}
+.lessons .miss{background:var(--card)}
+.small{font-size:.72rem;color:var(--gray);text-align:center;margin-top:1.2rem}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="scoreboard" id="scoreboard" style="display:none">
+    <div class="sb-top">
+      <span class="t">Temporada <em>Seca</em></span>
+      <span class="stage" id="sb-stage">Etapa 1</span>
+    </div>
+    <div class="dims" id="dims"></div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div id="screens"></div>
+</div>
+
+<script>
+/* ================= Estado ================= */
+const DIMS = [
+  {k:'eco', n:'Económica',   ic:'₡'},
+  {k:'rep', n:'Reputación',  ic:'★'},
+  {k:'com', n:'Comunidad',   ic:'⌂'},
+  {k:'mot', n:'Equipo',      ic:'♟'},
+  {k:'tur', n:'Turistas',    ic:'✈'},
+  {k:'bie', n:'Tu bienestar',ic:'❤'},
+];
+let S, FLAGS, LOG, stageIdx, decIdx, phase;
+
+function reset(){
+  S = {eco:65, rep:70, com:60, mot:75, tur:80, bie:60};
+  FLAGS = new Set(); LOG = []; stageIdx=0; decIdx=0;
+}
+
+/* ================= Contenido ================= */
+const STAGES = [
+{n:1,tag:'Etapa 1 · La señal · déficit 30%',t:'Tres semanas antes',
+ ctx:'El IMN confirma: súper El Niño en plena temporada alta. Ocupación reservada: 90%. Seis de cada diez huéspedes vienen de EE. UU.; el resto, de Europa y México. El pozo aún rinde, pero la ASADA ya habla de racionamiento.',
+ evs:s=>[],
+ dec:[
+  {q:'La primera jugada de la gerente:',opts:[
+   {l:'Actuar ya: cerrar piscina y restringir agua',c:'Cuesta: la experiencia del huésped, hoy',e:{tur:-8,eco:-3,com:4,rep:2},
+    f:'Actuaste sobre el síntoma antes de entender la estructura. Ahorras agua, pero pagas en experiencia — y aún no sabes si era el recorte correcto.'},
+   {l:'Mapear el sistema: equipo, ASADA, tour operadores y proveedores',c:'Cuesta: una semana de tiempo escaso',e:{mot:6,com:6,rep:3,bie:-3},flag:'mapa',
+    f:'Antes de mover una pieza, viste el tablero: quién comparte el acuífero, dónde están los umbrales. El mapa te dará opciones que otros no verán.'},
+   {l:'Esperar: quizás llueva; no alarmar a nadie',c:'Cuesta: nada hoy… y mucho mañana',e:{bie:3,eco:2},flag:'tarde',
+    f:'En sistemas con demoras, la señal llega antes que el golpe. No hacer nada también es una decisión — suele ser la más cara.'}]},
+  {q:'¿Qué les dices a los huéspedes con reserva?',opts:[
+   {l:'Transparencia radical: enviar el plan de agua pre-llegada',c:'Cuesta: algunas cancelaciones',e:{eco:-6,rep:8,tur:5},flag:'transp',
+    f:'Perdiste unas reservas y ganaste algo más escaso: credibilidad. El huésped que llega ya viene de aliado.'},
+   {l:'Silencio: que nadie cancele',c:'Cuesta: la sorpresa se pagará en recepción',e:{eco:5},flag:'silencio',
+    f:'Protegiste la ocupación de hoy hipotecando la satisfacción de mañana: la expectativa no gestionada se cobra con intereses.'},
+   {l:'Mensaje verde genérico: «somos un hotel sostenible»',c:'Cuesta: credibilidad, si la realidad no acompaña',e:{rep:3},flag:'green',
+    f:'Comunicar valores sin datos es un pagaré. Si la realidad no lo respalda, se llama greenwashing — y se viraliza.'}]}
+ ]},
+{n:2,tag:'Etapa 2 · Los recortes · déficit 50%',t:'Arranca la temporada',
+ ctx:'Déficit del 50%. La lavandería trabaja doble y la piscina evapora dos tanques por semana. Tus colaboradores —millennials y Gen Z entrenados para la excelencia— esperan instrucciones claras.',
+ evs:s=>[],
+ dec:[
+  {q:'Piscina, spa y experiencia del huésped:',opts:[
+   {l:'Rediseñar con los tour operadores: spa seco, tour al acuífero, cultura guanacasteca',c:'Cuesta: inversión y coordinación',e:{eco:-6,tur:7,com:3,rep:4},flag:'operadores',
+    f:'Convertiste la restricción en narrativa: el agua pasó de ser un problema del hotel a ser la historia del viaje. Y sumaste aliados que pasean a tus turistas.'},
+   {l:'Cerrar piscina y spa, sin más',c:'Cuesta: reseñas y experiencia',e:{tur:-9,com:5,eco:2},
+    f:'Ahorraste agua y quitaste experiencia sin ofrecer nada a cambio. En turismo, restringir sin re-diseñar se paga en reseñas.'},
+   {l:'Mantener todo con pipas privadas',c:'Cuesta: dinero… y paz comunitaria',e:{eco:-8,tur:5,com:-8},flag:'pipas',
+    f:'Las pipas compran tiempo y compran conflicto: extraen del mismo territorio. Resolviste tu síntoma exportando el problema al vecino.'}]},
+  {q:'Con tu equipo, ¿cómo lideras la crisis?',opts:[
+   {l:'Formar «guardianes del agua»: protocolos por umbral y autonomía real',c:'Cuesta: horas de capacitación en plena temporada',e:{mot:9,eco:-4,tur:3},flag:'guardianes',
+    f:'Distribuiste el liderazgo: ahora hay cuarenta pares de ojos leyendo señales. La resiliencia no se ordena — se entrena.'},
+   {l:'Control centralizado: toda decisión pasa por ti',c:'Cuesta: tu energía y la iniciativa del equipo',e:{mot:-6,bie:-8,tur:2},flag:'control',
+    f:'El control da consistencia hoy y fragilidad mañana: te convertiste en el punto único de falla del sistema.'},
+   {l:'Recortar horas del personal para proteger el margen',c:'Cuesta: talento y empleos locales',e:{eco:6,mot:-9,com:-5},
+    f:'El ahorro visible creó un costo invisible: talento entrenado que empieza a mirar otros hoteles — y familias locales que sienten el recorte.'}]}
+ ]},
+{n:3,tag:'Etapa 3 · La comunidad · déficit 75%',t:'El pueblo toca la puerta',
+ ctx:'La ASADA anuncia racionamiento nocturno. En el pueblo circula un audio: «los hoteles se llevan el agua». Una periodista local pide entrevista y tus proveedores orgánicos perdieron media cosecha.',
+ evs:s=>{
+   const ev=[];
+   if(FLAGS.has('tarde')){apply({com:-4});ev.push(['bad','Te alcanzó la demora: sin mapa ni plan, las llamadas se acumulan. (−4 Comunidad)']);}
+   if(FLAGS.has('pipas')){apply({com:-4});ev.push(['bad','Las pipas del hotel ya son tema en la asamblea comunal. (−4 Comunidad)']);}
+   return ev;},
+ dec:[
+  {q:'El agua es de todos. ¿Qué propones?',opts:[
+   {l:'Acuerdo de uso escalonado con la ASADA + cofinanciar tanques y cosecha de lluvia',c:'Cuesta: una inversión fuerte este trimestre',e:{eco:-8,com:12,rep:6},flag:'asada',
+    f:'Pasaste de competir por el recurso a cogestionarlo. Rompiste la tragedia de los comunes con la única herramienta que funciona: reglas compartidas.'},
+   {l:'Defender el pozo: el agua es legalmente tuya',c:'Cuesta: la licencia social',e:{com:-12,rep:-6,eco:-4},
+    f:'Legalmente impecable, sistémicamente explosivo: ganaste el argumento y perdiste al vecino. La licencia social no se litiga.'},
+   {l:'Donar agua algunos días, sin acuerdo formal',c:'Cuesta: poco — y estructura nada',e:{com:4,eco:-3},
+    f:'La generosidad puntual alivia pero no estructura: sin reglas, la buena voluntad se evapora más rápido que el agua.'}]},
+  {q:'La periodista espera respuesta:',opts:[
+   {l:'Dar la entrevista con los datos abiertos del pozo',c:'Cuesta: exponerte al escrutinio',e:{rep:7,com:5,bie:-3},unflag:'green',
+    f:'Los datos convirtieron el rumor en conversación. La transparencia es cara una vez; la opacidad es cara para siempre.'},
+   {l:'Declinar: «no es buen momento»',c:'Cuesta: que la historia se cuente sin ti',e:{rep:-6,com:-4},mod:s=>FLAGS.has('silencio')?{rep:-3}:null,
+    f:'El silencio también comunica — y en crisis comunica culpa. La nota salió igual, con otras fuentes.'},
+   {l:'Enviar un comunicado corporativo pulido',c:'Cuesta: la cercanía',e:{com:-2},
+    f:'Cumpliste el trámite sin tocar la emoción. En comunidades pequeñas, la confianza se construye cara a cara.'}]},
+  {q:'Tus proveedores orgánicos perdieron media cosecha:',opts:[
+   {l:'Compras anticipadas + menú de temporada seca con lo que sí crece',c:'Cuesta: margen del restaurante',e:{eco:-6,com:7,tur:4,rep:3},flag:'menu',
+    f:'Repartiste el riesgo climático por la cadena: tus proveedores sobreviven la sequía y tu cocina cuenta una historia que ningún importado puede contar.'},
+   {l:'Importar insumos más baratos «por ahora»',c:'Cuesta: el propósito, cuando más te definía',e:{eco:7,com:-6,rep:-5},
+    f:'El propósito se demuestra cuando cuesta. «Orgánico y local» dejó de ser cierto justo cuando era tu diferencia.'},
+   {l:'Reducir el menú a lo esencial',c:'Cuesta: experiencia gastronómica',e:{tur:-5,eco:2},
+    f:'Sobrio y honesto, pero sin diseño: la limitación sin narrativa se lee como decadencia, no como propósito.'}]}
+ ]},
+{n:4,tag:'Etapa 4 · El pico · déficit 90%',t:'La semana más dura',
+ ctx:'Semana pico. Un huésped con 800 mil seguidores publica: «Pagué por paraíso y me racionan la ducha». Y este viernes es el cumpleaños de 15 de tu hija.',
+ evs:s=>{
+   const ev=[];
+   if(FLAGS.has('silencio')){apply({tur:-5});ev.push(['bad','Varios huéspedes se enteraron del racionamiento al llegar. (−5 Turistas)']);}
+   if(FLAGS.has('transp')){apply({tur:3,eco:3});ev.push(['ok','Los huéspedes venían preparados: tu plan de agua pre-llegada evitó cancelaciones de último minuto. (+3 Turistas, +3 Económica)']);}
+   return ev;},
+ dec:[
+  {q:'El huésped influencer amenaza con reseña viral:',opts:[
+   {l:'Atenderlo tú, con transparencia y una experiencia única en el acuífero',c:'Cuesta: tu tiempo y energía en plena semana pico',e:{tur:8,rep:7,bie:-5},
+    mod:s=>FLAGS.has('operadores')?{tur:3}:null,
+    f:'Convertiste al crítico en narrador: nadie cuenta mejor la historia del agua que quien vino por la piscina.',
+    fmod:s=>FLAGS.has('operadores')?' Tus tour operadores aliados hicieron la magia logística (+3 Turistas extra).':''},
+   {l:'Upgrade, cena y reembolso parcial',c:'Cuesta: margen — y no deja aprendizaje',e:{eco:-6,tur:5},
+    f:'Compraste silencio, no convicción. Funciona una vez; no escala y no enseña nada al sistema.'},
+   {l:'Protocolo estándar: carta de disculpa',c:'Cuesta: el algoritmo decide por ti',e:{rep:-8,tur:-6},
+    mod:s=>(FLAGS.has('green')||FLAGS.has('silencio'))?{rep:-4}:null,
+    f:'En redes, la indiferencia es contenido. La reseña salió — y la respondió el algoritmo, no tú.'}]},
+  {q:'El cumpleaños de tu hija es este viernes:',opts:[
+   {l:'Delegar el fin de semana en el equipo y estar presente en casa',c:'Cuesta: soltar el control 72 horas',e:{bie:9},
+    mod:s=>FLAGS.has('guardianes')?{mot:5}:{tur:-5,mot:-3},
+    f:'',
+    fdyn:s=>FLAGS.has('guardianes')?
+      'El hotel no te extrañó: lo habías entrenado exactamente para esto. Delegar con capacidades instaladas también es liderazgo (+5 Equipo).':
+      'Te fuiste sin haber construido autonomía: el equipo improvisó y se notó (−5 Turistas, −3 Equipo). Delegar sin desarrollar es abdicar.'},
+   {l:'Quedarte: mandas regalo y videollamada',c:'Cuesta: lo que no se recupera',e:{bie:-9},
+    f:'El hotel ganó una gerente este fin de semana; tu casa perdió algo más difícil de reponer. El burnout no avisa: se acumula.'},
+   {l:'Celebrar en el hotel, entre llamadas',c:'Cuesta: estar a medias en todo',e:{bie:-2,tur:1},
+    f:'Mitad presente en todo, entera en nada. A veces funciona; como hábito, es la fórmula del desgaste.'}]}
+ ]},
+{n:5,tag:'Etapa 5 · El corte · déficit 95%',t:'La última semana',
+ ctx:'La ASADA corta el suministro a comercios durante tres días y los medios nacionales llegan a la zona. Lo que decidas ahora define la próxima temporada.',
+ evs:s=>{
+   const ev=[];
+   if(FLAGS.has('asada')){apply({com:4,eco:3});ev.push(['ok','Gracias al acuerdo, la ASADA te avisó con tiempo y protegió una dotación mínima. (+4 Comunidad, +3 Económica)']);}
+   else {apply({com:-5});ev.push(['bad','El corte te tomó sin acuerdo ni aviso. (−5 Comunidad)']);}
+   if(FLAGS.has('menu')){apply({eco:4});ev.push(['ok','El menú de temporada seca bajó costos de importación y se volvió atractivo del hotel. (+4 Económica)']);}
+   if(FLAGS.has('guardianes')){apply({eco:3,tur:2});ev.push(['ok','Tus guardianes del agua optimizaron consumos sin que lo pidieras: el sistema instalado paga dividendos. (+3 Económica, +2 Turistas)']);}
+   return ev;},
+ dec:[
+  {q:'Tres días sin suministro. ¿Cómo operas?',opts:[
+   {l:'Reducir aforo al 60%: reubicar huéspedes en hoteles aliados, con compensación elegante',c:'Cuesta: los ingresos de la semana pico',e:{eco:-8,tur:6,rep:8,com:8},
+    f:'Renunciaste a ingresos para no renunciar al futuro. Un huésped reubicado con dignidad es una historia de servicio, no una reseña de guerra.'},
+   {l:'Operar al 100% con pipas de emergencia',c:'Cuesta: caro en dinero y en territorio',e:{eco:-7,tur:3,rep:-4},
+    mod:s=>FLAGS.has('asada')?{com:-4}:{com:-10},
+    f:'Sostuviste la fachada una semana más al precio del territorio. El sistema recuerda quién extrajo en la hora más seca.'},
+   {l:'Cerrar «por mantenimiento» una semana',c:'Cuesta: ingresos, huéspedes y certidumbre del equipo',e:{eco:-9,tur:-7,mot:-4,com:6},
+    f:'Protegiste el agua con un eufemismo. La comunidad lo agradece; tus huéspedes cancelados y tu equipo en casa, menos.'}]},
+  {q:'La contadora es clara: entre tanques, compensaciones y pipas, la planilla de la temporada baja no alcanza. La junta sugiere despedir al 20% del personal para cubrir los otros costos.',opts:[
+   {l:'Despedir al 20%: proteger la caja',c:'',e:{eco:8,mot:-10,com:-7,rep:-3},flag:'despidos',
+    f:'La caja respira y el sistema sangra: despediste capacidades que entrenaste durante años — y familias del mismo pueblo con el que negocias el agua. El ahorro de planilla puede costarte la licencia social.'},
+   {l:'Reducción compartida: menos horas para todos, empezando por tu salario, con finanzas abiertas al equipo',c:'',e:{eco:4,mot:3,rep:2,bie:-3},
+    f:'Repartiste el dolor con transparencia y te pusiste primera en la fila. El equipo pierde ingreso, pero no confianza — y la desconfianza siempre sale más cara que las horas.'},
+   {l:'No tocar la planilla: inventar ingresos de temporada baja con el equipo (retiros de bienestar, turismo local, voluntariado del agua)',c:'',e:{eco:-4,mot:8,com:4,tur:2},
+    mod:s=>FLAGS.has('guardianes')?{eco:4}:null,
+    f:'Apostaste a que el talento es el activo, no el costo. Si el equipo responde, la temporada baja se reinventa; si no, la caja lo cobrará.',
+    fmod:s=>FLAGS.has('guardianes')?' Y respondió: tus guardianes del agua llenaron el calendario con ideas propias (+4 Económica).':''}]},
+  {q:'Cierra la temporada. ¿Qué dejas instalado?',opts:[
+   {l:'Publicar el Informe de Agua con datos abiertos + fondo de agua permanente',c:'Cuesta: recursos y exposición',e:{rep:8,com:7,eco:-4},flag:'legado',
+    f:'Institucionalizaste el aprendizaje: la crisis dejó estructura, no solo cicatrices. El próximo El Niño encontrará un sistema, no un hotel solo.'},
+   {l:'Campaña «Lo logramos juntos»',c:'Cuesta: credibilidad, si el relato supera al dato',e:{},
+    mod:s=>(FLAGS.has('green')||S.com<45)?{rep:-6}:{rep:4},
+    f:'',
+    fdyn:s=>(FLAGS.has('green')||S.com<45)?
+      'El aplauso propio sonó hueco: la comunidad recordó lo que faltó (−6 Reputación). El relato sin dato es un boomerang.':
+      'Celebrar está bien (+4 Reputación); celebrar con datos y créditos compartidos habría sido aún mejor.'},
+   {l:'Pasar la página: descansar, sin más',c:'Cuesta: que lo aprendido se evapore',e:{bie:6},
+    f:'El descanso es legítimo y necesario. Solo recuerda: lo que no se documenta, se repite.'}]}
+ ]}
+];
+
+const OFERTA = {
+ tag:'Evento inesperado',t:'La llamada del Caribe',
+ ctx:'Suena el teléfono: un resort cinco estrellas del Caribe —sin problemas de agua— te ofrece la gerencia general con 40% más de salario. Piden respuesta en 72 horas. Esa noche, tu hija pregunta si este año sí irán de vacaciones.',
+ opts:[
+  {l:'Aceptar: mereces un lugar sin sequías',c:'Cuesta: este hotel, esta comunidad, esta historia',accept:true},
+  {l:'Rechazar de inmediato y no contárselo a nadie',c:'Cuesta: cargar la decisión a solas',e:{bie:-5},
+   f:'Elegiste quedarte, pero cargaste la renuncia en silencio. Las decisiones no conversadas pesan doble.'},
+  {l:'Usar la oferta para renegociar con los dueños: recursos, equipo y descanso',c:'Cuesta: una conversación incómoda',e:{bie:7,eco:4,mot:4},flag:'apoyo',
+   f:'Convertiste una salida en apalancamiento: el sistema ahora sabe lo que vales, y tú negociaste condiciones para liderar sin quemarte.'},
+  {l:'Tomarte 48 horas: consultarlo con tu familia y tu equipo',c:'Cuesta: dos días de incertidumbre',e:{bie:8,mot:5},flag:'familia',
+   f:'La pausa también es estrategia. Volviste con claridad: tu propósito está aquí — y tu familia dentro del plan, no fuera de él.'}]
+};
+
+/* ================= Motor ================= */
+const screens = document.getElementById('screens');
+const dimsEl = document.getElementById('dims');
+const dotsEl = document.getElementById('dots');
+
+function apply(e){
+  const d={};
+  for(const k in e){const before=S[k];S[k]=Math.max(0,Math.min(100,S[k]+e[k]));d[k]=S[k]-before;}
+  return d;
+}
+function renderBoard(label){
+  document.getElementById('scoreboard').style.display='block';
+  document.getElementById('sb-stage').textContent=label;
+  dimsEl.innerHTML=DIMS.map(d=>{
+    const v=S[d.k];
+    const cls=v<35?'low':(v>=70?'high':'');
+    return `<div class="dim"><span class="lab"><span>${d.n}</span><span>${v}</span></span><div class="bar"><div class="fill ${cls}" style="width:${v}%"></div></div></div>`;
+  }).join('');
+  dotsEl.innerHTML=[0,1,2,3,4].map(i=>`<div class="dot ${i<=stageIdx?'on':''}"></div>`).join('');
+}
+function screen(html){
+  screens.innerHTML=`<div class="screen active">${html}</div>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function chipsHtml(d){
+  const names={eco:'Económica',rep:'Reputación',com:'Comunidad',mot:'Equipo',tur:'Turistas',bie:'Bienestar'};
+  return '<div class="chips">'+Object.keys(d).filter(k=>d[k]!==0).map(k=>
+    `<span class="chipd ${d[k]>0?'pos':'neg'}">${d[k]>0?'+':''}${d[k]} ${names[k]}</span>`).join('')+'</div>';
+}
+
+/* ---- Intro ---- */
+function intro(){
+  reset();
+  document.getElementById('scoreboard').style.display='none';
+  screen(`
+   <div class="hero">
+     <div class="eyebrow">Juego de decisiones · Liderazgo sistémico y sostenible</div>
+     <h1>Temporada Seca</h1>
+     <p>Eres la gerente de un hotel boutique sostenible en Guanacaste. Un súper El Niño golpeará en plena temporada alta, con 90% de ocupación reservada. Toda decisión mueve el sistema — y toda opción cuesta algo. Parte del juego es descubrir qué, antes de elegir.</p>
+   </div>
+   <p class="ctx"><b>Tu misión:</b> mantener el hotel abierto y deseable, cuidar la relación con la comunidad, sostener a proveedores y tour operadores, proteger a tu equipo… y no perderte a ti en el intento.</p>
+   <div class="dimlist">
+     ${DIMS.map(d=>`<div><span class="ic">${d.ic}</span><span><b>${d.n}.</b> ${({
+       eco:'Margen, ocupación y caja para invertir.',
+       rep:'Lo que se dice del hotel — en el pueblo y en redes.',
+       com:'Paz y confianza con la comunidad que comparte el acuífero.',
+       mot:'Motivación y capacidades de tus colaboradores.',
+       tur:'Satisfacción de tus huéspedes (6 de 10 de EE. UU.).',
+       bie:'Tu energía, tu salud y tu familia.'})[d.k]}</span></div>`).join('')}
+   </div>
+   <p class="ctx" style="font-size:.82rem;color:var(--gray)">Cada dimensión inicia entre 60 y 80 puntos. Si alguna cae demasiado, el final lo reflejará. Las decisiones de hoy cambian las opciones de mañana.</p>
+   <button class="btn gold" onclick="startGame()">Comenzar la temporada</button>`);
+}
+
+/* ---- Flujo de etapas ---- */
+function startGame(){stageIdx=0;stageIntro();}
+function stageIntro(){
+  const st=STAGES[stageIdx];
+  renderBoard(st.tag.split('·')[0].trim());
+  const evs=st.evs(S);
+  renderBoard(st.tag.split('·')[0].trim()); // refresca tras eventos
+  screen(`
+   <div class="eyebrow">${st.tag}</div>
+   <h2>${st.t}</h2>
+   <p class="ctx">${st.ctx}</p>
+   ${evs.map(e=>`<div class="notice ${e[0]==='bad'?'bad':''}">${e[1]}</div>`).join('')}
+   <button class="btn" onclick="decIdx=0;showDecision()">Ver la primera decisión</button>`);
+}
+function showDecision(){
+  const st=STAGES[stageIdx], d=st.dec[decIdx];
+  renderBoard(st.tag.split('·')[0].trim());
+  screen(`
+   <div class="eyebrow">${st.tag} · decisión ${decIdx+1} de ${st.dec.length}</div>
+   <div class="qcard">
+     <div class="q">${d.q}</div>
+     ${d.opts.map((o,i)=>`<button class="opt" onclick="choose(${i})"><b>${o.l}</b></button>`).join('')}
+   </div>`);
+}
+function choose(i){
+  const st=STAGES[stageIdx], d=st.dec[decIdx], o=d.opts[i];
+  const extra = o.mod ? (o.mod(S)||{}) : {};
+  const delta = apply({...o.e});
+  const delta2 = apply(extra);
+  for(const k in delta2) delta[k]=(delta[k]||0)+delta2[k];
+  if(o.flag)FLAGS.add(o.flag);
+  if(o.unflag)FLAGS.delete(o.unflag);
+  let fb = o.fdyn ? o.fdyn(S) : o.f;
+  if(o.fmod) fb += o.fmod(S);
+  LOG.push({et:st.tag.split('·')[0].trim(), q:d.q, l:o.l});
+  renderBoard(st.tag.split('·')[0].trim());
+  const last = decIdx>=st.dec.length-1;
+  const afterStage3 = stageIdx===2 && last;
+  screen(`
+   <div class="eyebrow">${st.tag}</div>
+   <p class="chosen">Elegiste: <b>${o.l}</b></p>
+   ${chipsHtml(delta)}
+   <span class="fb-tag">LECTURA SISTÉMICA</span>
+   <div class="fb-box">${fb}</div>
+   <button class="btn" onclick="${last?(afterStage3?'showOferta()':'nextStage()'):'decIdx++;showDecision()'}">Continuar</button>`);
+}
+function nextStage(){
+  stageIdx++;
+  if(stageIdx>=STAGES.length){ending();return;}
+  stageIntro();
+}
+
+/* ---- Evento: la oferta ---- */
+function showOferta(){
+  renderBoard('Evento');
+  screen(`
+   <div class="eyebrow">${OFERTA.tag}</div>
+   <h2>${OFERTA.t}</h2>
+   <p class="ctx">${OFERTA.ctx}</p>
+   <div class="qcard">
+     <div class="q">¿Qué respondes?</div>
+     ${OFERTA.opts.map((o,i)=>`<button class="opt" onclick="chooseOferta(${i})"><b>${o.l}</b></button>`).join('')}
+   </div>`);
+}
+function chooseOferta(i){
+  const o=OFERTA.opts[i];
+  if(o.accept){LOG.push({et:'Evento',q:OFERTA.t,l:o.l});endingCaribe();return;}
+  const delta=apply({...o.e});
+  if(o.flag)FLAGS.add(o.flag);
+  LOG.push({et:'Evento',q:OFERTA.t,l:o.l});
+  renderBoard('Evento');
+  screen(`
+   <div class="eyebrow">${OFERTA.tag}</div>
+   <p class="chosen">Elegiste: <b>${o.l}</b></p>
+   ${chipsHtml(delta)}
+   <span class="fb-tag">LECTURA SISTÉMICA</span>
+   <div class="fb-box">${o.f}</div>
+   <button class="btn" onclick="nextStage()">Seguir en Guanacaste</button>`);
+}
+
+/* ---- Finales ---- */
+function avg(){return Math.round(DIMS.reduce((a,d)=>a+S[d.k],0)/6);}
+function nextSeason(){return Math.max(15,Math.min(98,Math.round(S.tur*0.5+S.rep*0.3+S.com*0.2)));}
+function verdict(){
+  const a=avg(), lows=DIMS.filter(d=>S[d.k]<25).length, lows40=DIMS.filter(d=>S[d.k]<40).length;
+  if(a<40||lows>=2)return {cls:'bad',t:'El hotel no abre la próxima temporada',
+   d:'Entre reseñas duras, comunidad distante y caja exhausta, los dueños ponen el hotel en venta. La sequía no fue la causa: fue el revelador de un sistema sin holgura.'};
+  if(a<55||S.tur<40||S.eco<30)return {cls:'bad',t:'Temporada perdida',
+   d:'El hotel sobrevive, pero las reseñas y la relación con la zona golpearon la marca. La próxima temporada abre cuesta arriba: habrá que reconstruir confianza con descuentos y hechos.'};
+  if(a<72||lows40>0)return {cls:'mid',t:'Sobrevivió, con cicatrices',
+   d:'El hotel cierra la temporada de pie. Algunas decisiones costaron caro y dejaron lecciones; otras sembraron estructura. La próxima sequía dirá cuáles pesaron más.'};
+  if(FLAGS.has('despidos'))return {cls:'mid',t:'Sobrevivió, con cicatrices',
+   d:'Los números cierran y el relato casi. Pero el pueblo y tu equipo recuerdan los despidos: en un hotel de alto estándar, la gente es el sistema, y esa herida tarda temporadas en sanar. Estuviste a una decisión del liderazgo regenerativo.'};
+  return {cls:'win',t:'Liderazgo regenerativo',
+   d:'El hotel termina la peor sequía en décadas convertido en referente: huéspedes embajadores, comunidad aliada, equipo dueño del sistema. No solo resististe El Niño — lo convertiste en ventaja.'};
+}
+function lessonsHtml(){
+  const L=[];
+  const ok=(c,t)=>{if(c)L.push(`<div class="ok">✔ ${t}</div>`)};
+  const miss=(c,t)=>{if(c)L.push(`<div class="miss">△ ${t}</div>`)};
+  ok(FLAGS.has('mapa'),'Mapeaste el sistema antes de intervenirlo: viste umbrales y actores que otros ignoraron.');
+  ok(FLAGS.has('asada'),'Rompiste la tragedia de los comunes con reglas compartidas: el acuerdo con la ASADA fue tu mejor seguro.');
+  ok(FLAGS.has('guardianes'),'Instalaste capacidades en el equipo: la delegación tuvo dónde apoyarse.');
+  ok(FLAGS.has('transp'),'Gestionaste expectativas con transparencia: los huéspedes llegaron de aliados.');
+  ok(FLAGS.has('legado'),'Institucionalizaste el aprendizaje: la próxima crisis encontrará estructura.');
+  ok(FLAGS.has('apoyo')||FLAGS.has('familia'),'Cuidaste tu sostenibilidad personal: negociaste apoyo o hiciste la pausa a tiempo.');
+  miss(!FLAGS.has('asada'),'Sin acuerdo estructural con la comunidad, cada sequía volverá a ser una batalla por el acuífero.');
+  miss(!FLAGS.has('guardianes'),'El liderazgo quedó concentrado en ti: el sistema sigue teniendo un punto único de falla.');
+  miss(FLAGS.has('green'),'La comunicación superó a la evidencia en algún momento: el greenwashing cobra intereses.');
+  miss(FLAGS.has('despidos'),'El recorte de planilla alivió la caja rompiendo capacidades y confianza: en servicio de alto estándar, la gente ES el sistema.');
+  miss(S.bie<40,'El costo personal fue alto. Un liderazgo que se agota no es sostenible, por definición.');
+  return L.slice(0,6).join('');
+}
+function scorebarsHtml(){
+  return `<div class="score-final">${DIMS.map(d=>{
+    const v=S[d.k];const col=v<35?'var(--brick)':(v>=70?'#8FB98F':'var(--gold)');
+    return `<div class="sf-row"><span class="nm">${d.n}</span><div class="bar"><div class="fill" style="width:${v}%;background:${col}"></div></div><span class="val">${v}</span></div>`;}).join('')}</div>`;
+}
+function logHtml(){
+  return `<ul class="loglist">${LOG.map(l=>`<li><b>${l.et}:</b> ${l.l}</li>`).join('')}</ul>`;
+}
+function ending(){
+  const v=verdict();
+  if(S.bie<30) v.d += ' Pero hay una factura aparte: terminaste la temporada al borde del burnout. El hotel ganó una temporada; tú perdiste meses de energía que nadie contabiliza.';
+  renderBoard('Final');
+  screen(`
+   <div class="eyebrow">Scorecard final · Temporada Seca</div>
+   <div class="ending ${v.cls}"><h2>${v.t}</h2><p>${v.d}</p></div>
+   <p class="ctx" style="margin-bottom:.2rem"><b>Ocupación proyectada, próxima temporada:</b></p>
+   <div class="kpi-next">${nextSeason()}%</div>
+   ${scorebarsHtml()}
+   <span class="fb-tag">TUS DECISIONES</span>
+   ${logHtml()}
+   <span class="fb-tag">LECCIONES DEL SISTEMA</span>
+   <div class="lessons" style="margin-top:.5rem">${lessonsHtml()}</div>
+   <button class="btn gold" onclick="copyResumen(this)">Copiar mi resumen</button>
+   <button class="btn ghost" onclick="intro()">Jugar de nuevo</button>
+   <p class="small">Instrumento didáctico para entrenar liderazgos sistémicos y sostenibles · JGG</p>`);
+}
+function endingCaribe(){
+  const solid = FLAGS.has('guardianes') && FLAGS.has('asada');
+  apply({rep: solid ? -5 : -10, bie: -3});
+  renderBoard('Final');
+  const brandCost = solid ?
+   'En la industria turística —que es pequeña y conversa— la historia que viaja contigo no es solo el nuevo cargo: es que te fuiste en plena sequía (−5 Reputación). La estructura que dejaste suaviza el juicio, pero no lo borra: los liderazgos se recuerdan por cómo se quedan… y por cómo se van.' :
+   'En la industria turística —que es pequeña y conversa— la historia que viaja contigo no es el nuevo cargo: es que abandonaste a un equipo y a una empresa en medio de la crisis (−10 Reputación). Esa etiqueta llega al Caribe antes que tu primera reunión, y también pesa de noche (−3 Bienestar).';
+  const hotelFate = solid ?
+   'El equipo que formaste y el acuerdo con la ASADA sostuvieron el hotel sin ti: cerró la temporada de pie y te despidieron con gratitud. Lo dejaste mejor de lo que lo encontraste — la marca de un liderazgo que construye sistemas, no dependencias.' :
+   'Sin capacidades instaladas ni acuerdos estructurales, el hotel improvisó el resto de la temporada: reseñas duras, comunidad distante, equipo a la deriva. El sistema que dependía de ti se fue contigo.';
+  screen(`
+   <div class="eyebrow">Final alternativo · La llamada del Caribe</div>
+   <div class="ending ${solid?'mid':'bad'}"><h2>Nueva vida en el Caribe</h2>
+   <p>Aceptaste. En el Caribe sobra el agua y el salario alcanza para las vacaciones que tu hija pedía. ${hotelFate}</p>
+   <p style="margin-top:.5rem"><b>Tu marca personal:</b> ${brandCost}</p>
+   <p style="margin-top:.5rem"><i>La pregunta que viaja contigo: ¿era el agua el problema — o lo que aún no habías construido para liderarla?</i></p></div>
+   ${scorebarsHtml()}
+   <span class="fb-tag">TUS DECISIONES HASTA LA PARTIDA</span>
+   ${logHtml()}
+   <button class="btn gold" onclick="copyResumen(this)">Copiar mi resumen</button>
+   <button class="btn ghost" onclick="intro()">Jugar de nuevo</button>
+   <p class="small">Instrumento didáctico para entrenar liderazgos sistémicos y sostenibles · JGG</p>`);
+}
+function copyResumen(btn){
+  const names={eco:'Económica',rep:'Reputación',com:'Comunidad',mot:'Equipo',tur:'Turistas',bie:'Bienestar'};
+  let t='TEMPORADA SECA · Mi scorecard\n';
+  t+=DIMS.map(d=>`${names[d.k]}: ${S[d.k]}`).join(' · ')+'\n';
+  t+=`Promedio: ${avg()} · Próxima temporada: ${nextSeason()}%\n\nDecisiones:\n`;
+  t+=LOG.map(l=>`- ${l.et}: ${l.l}`).join('\n');
+  const done=()=>{btn.textContent='Copiado ✓';setTimeout(()=>btn.textContent='Copiar mi resumen',1800)};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(done).catch(()=>{fb(t);done();});}
+  else{fb(t);done();}
+  function fb(x){const ta=document.createElement('textarea');ta.value=x;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}document.body.removeChild(ta);}
+}
+
+intro();
+</script>
+<!-- JGG -->
+</body>
+</html>
